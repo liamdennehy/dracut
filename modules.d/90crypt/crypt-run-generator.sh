@@ -10,14 +10,21 @@ crypttab_contains "$luks" "$dev" && exit 0
 
 allowdiscards="-"
 
+# command -v cryptsetup >/dev/null || dwarn "Cannot locate 'cryptsetup', YMMV"
+
 # parse for allow-discards
-if strstr "$(cryptsetup --help)" "allow-discards"; then
-    if discarduuids=$(getargs "rd.luks.allow-discards"); then
+if getargbool 0 rd.luks.allow-discards; then
+    # The parameter is present in cmdline at least once.
+    # Let's see if specific uuids are specified
+    discarduuids=$(getargs "rd.luks.allow-discards")
+    if [ ! -z "$discarduuids" ]; then
         discarduuids=$(str_replace "$discarduuids" 'luks-' '')
         if strstr " $discarduuids " " ${luks##luks-}"; then
+            # This uuid matches
             allowdiscards="discard"
         fi
-    elif getargbool 0 rd.luks.allow-discards; then
+    else
+        # Only the boolean parameter was specified
         allowdiscards="discard"
     fi
 fi
